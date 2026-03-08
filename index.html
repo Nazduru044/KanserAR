@@ -3,32 +3,48 @@
 <head>
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <meta charset="UTF-8">
-    <title>Kanser Farkındalık WebAR</title>
-    
+    <title>Kanser Farkındalık Projesi AR</title>
+
     <script src="https://aframe.io/releases/1.5.0/aframe.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/mind-ar@1.2.5/dist/mindar-image-aframe.prod.js"></script>
 
     <style>
         body { margin: 0; overflow: hidden; }
         
-        /* Yüklenme ekranı için basit bir stil */
+        /* Kamera açılana kadar görünen yükleme ekranı */
         #scanning-overlay {
             display: flex; align-items: center; justify-content: center;
             position: absolute; left: 0; right: 0; top: 0; bottom: 0;
-            background: rgba(0,0,0,0.5); color: white;
-            z-index: 2; font-family: sans-serif;
+            background: rgba(0,0,0,0.7); color: white;
+            z-index: 999; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            text-align: center;
         }
         .hidden { display: none !important; }
+
+        /* Tarama efekti (opsiyonel görsel yardımcı) */
+        .scanner-line {
+            width: 70%; height: 2px; background: #00ff00;
+            position: absolute; top: 50%; left: 15%;
+            box-shadow: 0 0 15px #00ff00;
+            animation: scan 2s infinite ease-in-out;
+        }
+        @keyframes scan {
+            0% { top: 30%; } 50% { top: 70%; } 100% { top: 30%; }
+        }
     </style>
 </head>
 <body>
 
     <div id="scanning-overlay">
-        <p>Kamerayı hedefe tutun...</p>
+        <div>
+            <h2>Kamera Hazırlanıyor...</h2>
+            <p>Lütfen kamerayı hedef görsele tutun.</p>
+            <div class="scanner-line"></div>
+        </div>
     </div>
 
     <a-scene 
-        mindar-image="imageTargetSrc: ./kanser.mind; uiScanning: #scanning-overlay;" 
+        mindar-image="imageTargetSrc: ./kanser.mind; uiScanning: #scanning-overlay; filterMinCF:0.0001; filterBeta: 0.001;" 
         color-space="sRGB" 
         renderer="colorManagement: true, physicallyCorrectLights" 
         vr-mode-ui="enabled: false" 
@@ -46,36 +62,39 @@
             </video>
         </a-assets>
 
-        <a-camera position="0 0 0" look-controls="enabled: false" cursor="fuse: false; rayOrigin: mouse;" raycaster="far: 10000; objects: .clickable"></a-camera>
+        <a-camera position="0 0 0" look-controls="enabled: false"></a-camera>
 
-        <a-entity id="example-target" mindar-image-target="targetIndex: 0">
-            <a-video id="video-display" 
+        <a-entity id="targetContainer" mindar-image-target="targetIndex: 0">
+            <a-video id="videoScreen" 
                      src="#kanserVideo" 
                      position="0 0 0" 
                      rotation="0 0 0" 
                      width="1" 
-                     height="0.56">
+                     height="0.6" 
+                     class="clickable">
             </a-video>
         </a-entity>
     </a-scene>
 
     <script>
-        const video = document.querySelector('#kanserVideo');
-        const targetEntity = document.querySelector('#example-target');
-        const overlay = document.querySelector('#scanning-overlay');
+        document.addEventListener("DOMContentLoaded", () => {
+            const video = document.querySelector('#kanserVideo');
+            const targetContainer = document.querySelector('#targetContainer');
+            const overlay = document.querySelector('#scanning-overlay');
 
-        // Hedef görüntü bulunduğunda çalışacak kodlar
-        targetEntity.addEventListener("targetFound", event => {
-            console.log("Hedef bulundu");
-            video.play();
-            overlay.classList.add("hidden"); // Yazıyı gizle
-        });
+            // Hedef görsel bulunduğunda
+            targetContainer.addEventListener("targetFound", () => {
+                console.log("Hedef bulundu! Video başlıyor...");
+                video.play().catch(e => console.error("Video oynatılamadı:", e));
+                overlay.classList.add("hidden"); // Yükleme yazısını gizle
+            });
 
-        // Hedef görüntü kaybedildiğinde çalışacak kodlar
-        targetEntity.addEventListener("targetLost", event => {
-            console.log("Hedef kayboldu");
-            video.pause();
-            overlay.classList.remove("hidden"); // Yazıyı tekrar göster
+            // Hedef görsel kaybedildiğinde
+            targetContainer.addEventListener("targetLost", () => {
+                console.log("Hedef kayboldu. Video durduruldu.");
+                video.pause();
+                overlay.classList.remove("hidden"); // Yükleme yazısını tekrar göster
+            });
         });
     </script>
 </body>
