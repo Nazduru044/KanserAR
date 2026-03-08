@@ -1,1 +1,82 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta charset="UTF-8">
+    <title>Kanser Farkındalık WebAR</title>
+    
+    <script src="https://aframe.io/releases/1.5.0/aframe.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/mind-ar@1.2.5/dist/mindar-image-aframe.prod.js"></script>
 
+    <style>
+        body { margin: 0; overflow: hidden; }
+        
+        /* Yüklenme ekranı için basit bir stil */
+        #scanning-overlay {
+            display: flex; align-items: center; justify-content: center;
+            position: absolute; left: 0; right: 0; top: 0; bottom: 0;
+            background: rgba(0,0,0,0.5); color: white;
+            z-index: 2; font-family: sans-serif;
+        }
+        .hidden { display: none !important; }
+    </style>
+</head>
+<body>
+
+    <div id="scanning-overlay">
+        <p>Kamerayı hedefe tutun...</p>
+    </div>
+
+    <a-scene 
+        mindar-image="imageTargetSrc: ./kanser.mind; uiScanning: #scanning-overlay;" 
+        color-space="sRGB" 
+        renderer="colorManagement: true, physicallyCorrectLights" 
+        vr-mode-ui="enabled: false" 
+        device-orientation-permission-ui="enabled: false">
+        
+        <a-assets>
+            <video id="kanserVideo" 
+                   src="kanser.mp4" 
+                   preload="auto" 
+                   loop="true" 
+                   muted="true" 
+                   playsinline 
+                   webkit-playsinline 
+                   crossorigin="anonymous">
+            </video>
+        </a-assets>
+
+        <a-camera position="0 0 0" look-controls="enabled: false" cursor="fuse: false; rayOrigin: mouse;" raycaster="far: 10000; objects: .clickable"></a-camera>
+
+        <a-entity id="example-target" mindar-image-target="targetIndex: 0">
+            <a-video id="video-display" 
+                     src="#kanserVideo" 
+                     position="0 0 0" 
+                     rotation="0 0 0" 
+                     width="1" 
+                     height="0.56">
+            </a-video>
+        </a-entity>
+    </a-scene>
+
+    <script>
+        const video = document.querySelector('#kanserVideo');
+        const targetEntity = document.querySelector('#example-target');
+        const overlay = document.querySelector('#scanning-overlay');
+
+        // Hedef görüntü bulunduğunda çalışacak kodlar
+        targetEntity.addEventListener("targetFound", event => {
+            console.log("Hedef bulundu");
+            video.play();
+            overlay.classList.add("hidden"); // Yazıyı gizle
+        });
+
+        // Hedef görüntü kaybedildiğinde çalışacak kodlar
+        targetEntity.addEventListener("targetLost", event => {
+            console.log("Hedef kayboldu");
+            video.pause();
+            overlay.classList.remove("hidden"); // Yazıyı tekrar göster
+        });
+    </script>
+</body>
+</html>
